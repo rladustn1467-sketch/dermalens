@@ -1,0 +1,238 @@
+/* =========================================================================
+   SleepAI Lab - Presentation Theme (reveal.js override)
+   ========================================================================= */
+
+:root {
+  --p-navy: #1f3a63;
+  --p-blue: #3d7ea6;
+  --p-sky: #5bc8e0;
+  --p-lavender: #7c6fe0;
+  --p-amber: #f2994a;
+  --p-rose: #c0577a;
+  --p-bg: #f4f7fb;
+}
+
+.reveal {
+  font-family: 'Noto Sans KR', sans-serif;
+  color: #24303d;
+}
+
+.reveal .slides {
+  text-align: left;
+}
+
+.reveal .slides section {
+  background: #ffffff;
+  padding: 50px 64px;
+  box-sizing: border-box;
+  border-radius: 0;
+}
+
+.reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+  font-family: 'Noto Sans KR', sans-serif;
+  text-transform: none;
+  color: var(--p-navy);
+  letter-spacing: -0.01em;
+}
+
+.reveal h2 { font-size: 1.9rem; margin-bottom: 6px; }
+.reveal h2 .num {
+  display: inline-block;
+  background: linear-gradient(135deg, var(--p-blue), var(--p-navy));
+  color: #fff;
+  font-size: 1rem;
+  padding: 4px 12px;
+  border-radius: 8px;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+.reveal h3 { font-size: 1.5rem; margin-bottom: 22px; }
+.reveal p, .reveal li { font-size: 1.05rem; line-height: 1.6; }
+
+/* ---------------- Cover slide ---------------- */
+.slide-cover {
+  background: linear-gradient(150deg, var(--p-navy) 0%, #274a7e 55%, var(--p-blue) 100%) !important;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center !important;
+  color: #fff;
+  height: 100%;
+}
+.slide-cover h1 {
+  color: #fff;
+  font-size: 4rem;
+  font-weight: 800;
+  margin: 14px 0 10px;
+}
+.slide-cover h2 { color: #fff; font-size: 3rem; }
+.cover-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.14);
+  padding: 8px 18px; border-radius: 999px;
+  font-size: 0.9rem; color: #cfe0f2;
+}
+.cover-sub { font-size: 1.3rem; color: #dde8f5; max-width: 800px; }
+.cover-tags { display: flex; gap: 18px; margin: 24px 0; flex-wrap: wrap; justify-content: center; }
+.cover-tags span {
+  background: rgba(255,255,255,0.12); padding: 10px 18px; border-radius: 12px;
+  font-size: 0.95rem; display: flex; align-items: center; gap: 8px;
+}
+.cover-disclaimer {
+  margin-top: 30px; font-size: 0.85rem; color: #b8c9e0;
+  border-top: 1px solid rgba(255,255,255,0.2); padding-top: 16px; max-width: 640px;
+}
+.closing-disclaimer {
+  margin-top: 26px; background: rgba(255,255,255,0.12); padding: 18px 26px; border-radius: 14px;
+  font-size: 0.95rem; color: #f5e2c5; max-width: 640px; display: flex; gap: 12px; align-items: flex-start; text-align: left;
+}
+.closing-disclaimer i { font-size: 1.3rem; margin-top: 3px; color: #f2c86a; }
+
+/* ---------------- Section header slide ---------------- */
+.slide-header {
+  display: flex !important; align-items: center; justify-content: flex-start;
+  background: linear-gradient(135deg, #eef2fb, #f4f7fb) !important;
+}
+.slide-header h2 { font-size: 2.6rem; }
+
+/* ---------------- Stat row ---------------- */
+.stat-row { display: flex; gap: 24px; margin-top: 30px; }
+.stat-box {
+  flex: 1; background: var(--p-bg); border-radius: 16px; padding: 26px;
+  text-align: center; box-shadow: 0 4px 16px rgba(31,58,99,0.06);
+}
+.stat-num { font-size: 2.6rem; font-weight: 800; color: var(--p-blue); }
+.stat-num span { font-size: 1.2rem; color: var(--p-lavender); margin-left: 4px; }
+.stat-label { font-size: 0.92rem; color: #5a6b7a; margin-top: 10px; }
+
+.note {
+  margin-top: 26px; background: #fff8ec; border-left: 4px solid var(--p-amber);
+  padding: 14px 20px; border-radius: 8px; font-size: 0.95rem; color: #7a5b1a;
+}
+
+/* ---------------- Compare grid ---------------- */
+.compare-grid { display: flex; gap: 22px; margin-top: 10px; }
+.compare-card {
+  flex: 1; background: var(--p-bg); border-radius: 16px; padding: 26px; text-align: center;
+  box-shadow: 0 4px 16px rgba(31,58,99,0.06);
+}
+.compare-card i { font-size: 2.2rem; color: var(--p-blue); margin-bottom: 14px; }
+.compare-card h4 { font-size: 1.15rem; margin-bottom: 10px; }
+.compare-card p { font-size: 0.92rem; color: #5a6b7a; }
+
+/* ---------------- Arrow flow ---------------- */
+.arrow-flow {
+  display: flex; align-items: center; justify-content: center; gap: 14px; margin: 40px 0;
+  flex-wrap: wrap;
+}
+.arrow-flow.small .arrow-item { min-width: 130px; }
+.arrow-item {
+  background: linear-gradient(135deg, var(--p-navy), var(--p-blue)); color: #fff;
+  border-radius: 14px; padding: 20px 18px; text-align: center; min-width: 160px;
+}
+.arrow-item i { font-size: 1.6rem; display: block; margin-bottom: 8px; }
+.arrow-item span { font-size: 0.9rem; }
+.arrow-flow > i { color: var(--p-lavender); font-size: 1.4rem; }
+
+/* ---------------- Goal grid ---------------- */
+.goal-grid { display: flex; gap: 24px; margin-top: 10px; }
+.goal-card {
+  flex: 1; background: #fff; border: 1.5px solid #e2e8f0; border-radius: 18px; padding: 28px;
+  box-shadow: 0 4px 16px rgba(31,58,99,0.06);
+}
+.goal-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--p-sky), var(--p-lavender));
+  color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 16px;
+}
+.goal-card h4 { font-size: 1.15rem; margin-bottom: 8px; }
+.goal-card p { font-size: 0.92rem; color: #5a6b7a; }
+
+/* ---------------- Pipeline ---------------- */
+.pipeline { display: flex; align-items: center; justify-content: center; margin: 40px 0; flex-wrap: wrap; gap: 6px; }
+.pipe-step { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 130px; text-align: center; }
+.pipe-icon {
+  width: 60px; height: 60px; border-radius: 50%; background: var(--p-bg);
+  color: var(--p-blue); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+  border: 2px solid var(--p-blue);
+}
+.pipe-step span { font-size: 0.82rem; color: var(--p-navy); font-weight: 600; }
+.pipe-arrow { width: 24px; height: 2px; background: var(--p-lavender); position: relative; }
+.pipe-arrow::after {
+  content: ''; position: absolute; right: -1px; top: -3px; border: 4px solid transparent; border-left-color: var(--p-lavender);
+}
+
+/* ---------------- Detail table ---------------- */
+.detail-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.detail-table th, .detail-table td { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+.detail-table th { width: 160px; color: var(--p-navy); font-size: 0.95rem; white-space: nowrap; }
+.detail-table td { font-size: 0.92rem; color: #4a5b6a; }
+
+/* ---------------- Bullet list ---------------- */
+.bullet-list { margin-top: 10px; }
+.bullet-list li { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 16px; }
+.bullet-list li i { color: #2fa864; margin-top: 5px; }
+
+/* ---------------- Model flow ---------------- */
+.model-flow { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 40px 0; flex-wrap: wrap; }
+.model-box {
+  background: var(--p-bg); border-radius: 14px; padding: 20px 22px; text-align: center; min-width: 140px;
+}
+.model-box.highlight { background: linear-gradient(135deg, var(--p-lavender), var(--p-blue)); color: #fff; }
+.model-box h4 { margin-bottom: 6px; font-size: 1rem; }
+.model-box.highlight h4 { color: #fff; }
+.model-box p { font-size: 0.82rem; margin: 0; color: #5a6b7a; }
+.model-box.highlight p { color: #eaf0fb; }
+.model-flow > i { color: var(--p-lavender); font-size: 1.3rem; }
+
+/* ---------------- Screen demo ---------------- */
+.screen-demo { display: flex; gap: 30px; align-items: center; }
+.screen-demo img {
+  width: 62%; border-radius: 14px; box-shadow: 0 10px 32px rgba(31,58,99,0.18); border: 1px solid #e2e8f0;
+}
+.screen-demo ul { flex: 1; display: flex; flex-direction: column; gap: 14px; }
+.screen-demo li {
+  background: var(--p-bg); padding: 14px 16px; border-radius: 10px; font-size: 0.92rem;
+  border-left: 3px solid var(--p-blue); color: #34455a;
+}
+.mobile-demo img { width: 32%; margin: 0 auto; display: block; }
+.mobile-demo { flex-direction: row; }
+
+/* ---------------- Roadmap list ---------------- */
+.roadmap-list { margin-top: 10px; display: flex; flex-direction: column; gap: 18px; }
+.roadmap-list li { display: flex; gap: 18px; align-items: flex-start; }
+.roadmap-list li i {
+  width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(135deg, var(--p-amber), #f7b271);
+  color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0;
+}
+.roadmap-list li div { display: flex; flex-direction: column; gap: 4px; }
+.roadmap-list li strong { color: var(--p-navy); font-size: 1.02rem; }
+.roadmap-list li span { font-size: 0.9rem; color: #5a6b7a; }
+
+/* Reveal progress bar color */
+.reveal .progress { color: var(--p-blue); }
+.reveal .controls { color: var(--p-navy); }
+
+/* =========================================================================
+   PDF 인쇄(?print-pdf) 최적화
+   - 배경색/그라디언트가 인쇄 시 생략되지 않도록 강제 출력
+   - 슬라이드 1장 = PDF 1페이지로 고정, 내부 스크롤/잘림 방지
+   - 화면 전용 UI(컨트롤, 진행바)는 인쇄물에서 숨김
+   ========================================================================= */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  .reveal .controls,
+  .reveal .progress,
+  .reveal .slide-number {
+    display: none !important;
+  }
+  .reveal .slides section {
+    page-break-after: always;
+    break-after: page;
+  }
+}
