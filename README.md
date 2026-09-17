@@ -1,6 +1,8 @@
 # 더마렌즈 (DermaLens)   
 ## 실행 링크 : https://dermalens.kdt2025.com/   
 <img width="1121" height="661" alt="image" src="https://github.com/user-attachments/assets/13603536-438c-48fc-8e1f-a6618539569d" />   
+<img width="1046" height="827" alt="image" src="https://github.com/user-attachments/assets/b38f1d81-83ca-4c15-8615-7940e967d2de" />   
+
 <img width="643" height="640" alt="image" src="https://github.com/user-attachments/assets/1499fe19-d53d-41bc-b7eb-1749e34e0dac" />   
 
 
