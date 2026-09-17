@@ -1,0 +1,62 @@
+[
+  {
+    "name": "analysis_history",
+    "fields": [
+      {
+        "name": "id",
+        "type": "text",
+        "description": "레코드 고유 ID (시스템 관리)"
+      },
+      {
+        "name": "analyzed_at",
+        "type": "number",
+        "description": "분석 시각 (Unix ms)"
+      },
+      {
+        "name": "disease_id",
+        "type": "text",
+        "description": "상위 예측 클래스 ID (psoriasis | atopic | acne | rosacea | seborrheic | normal)"
+      },
+      {
+        "name": "disease_ko",
+        "type": "text",
+        "description": "상위 예측 클래스 한글명"
+      },
+      {
+        "name": "disease_en",
+        "type": "text",
+        "description": "상위 예측 클래스 영문명"
+      },
+      {
+        "name": "confidence",
+        "type": "number",
+        "description": "상위 예측 확률 (%)"
+      },
+      {
+        "name": "quality",
+        "type": "number",
+        "description": "이미지 품질 점수 (0-100)"
+      },
+      {
+        "name": "probs",
+        "type": "text",
+        "description": "클래스별 확률 JSON 문자열"
+      },
+      {
+        "name": "thumb",
+        "type": "text",
+        "description": "분석 이미지 썸네일 (data URL)"
+      },
+      {
+        "name": "model",
+        "type": "text",
+        "description": "사용된 모델 라벨"
+      },
+      {
+        "name": "note",
+        "type": "text",
+        "description": "사용자 메모"
+      }
+    ]
+  }
+]

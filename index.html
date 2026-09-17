@@ -1,290 +1,97 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SleepAI Lab · EEG 기반 수면 분석 프로토타입</title>
-<meta name="description" content="EEG/PSG 데이터를 기반으로 수면 단계를 자동 분류하고, 수면 질을 분석하며, 수면 장애 패턴을 스크리닝하는 AI 프로토타입 대시보드">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>더마렌즈 DermaLens | AI 기반 안면 피부질환 분석 서비스</title>
+  <meta name="description" content="사진 한 장으로 6가지 피부질환 관련 소견을 확인하는 AI 기반 안면 피부질환 분석 보조 서비스. DenseNet121 기반 이미지 분류 모델 프로토타입.">
+  <meta name="theme-color" content="#0d9488">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
-<link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%AC%3C/text%3E%3C/svg%3E">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <a class="skip-link" href="#view-root">본문으로 바로가기</a>
 
-<div id="app-shell">
-  <!-- ============ Sidebar (Desktop Nav) ============ -->
-  <aside class="sidebar">
-    <div class="brand">
-      <span class="brand-icon"><i class="fa-solid fa-moon"></i></span>
-      <span>SleepAI Lab
-        <small>EEG 기반 수면 분석 프로토타입</small>
-      </span>
+  <header class="app-header" id="app-header">
+    <div class="shell header-inner">
+      <a href="#/" class="brand" aria-label="더마렌즈 홈으로 이동">
+        <span class="brand-mark" aria-hidden="true"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
+        <span class="brand-text">
+          <strong>더마렌즈</strong>
+          <small>DermaLens</small>
+        </span>
+      </a>
+
+      <nav class="primary-nav" id="primary-nav" aria-label="주요 메뉴">
+        <a href="#/" data-nav="home">홈</a>
+        <a href="#/analyze" data-nav="analyze">피부 분석</a>
+        <a href="#/diseases" data-nav="diseases">질환 정보</a>
+        <a href="#/history" data-nav="history">분석 기록</a>
+      </nav>
+
+      <button class="btn btn-primary btn-sm header-cta" type="button" data-route="#/analyze">
+        <i class="fa-solid fa-camera" aria-hidden="true"></i> 분석 시작
+      </button>
+
+      <button class="nav-toggle" id="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="메뉴 열기">
+        <i class="fa-solid fa-bars" aria-hidden="true"></i>
+      </button>
     </div>
-    <ul class="nav-list">
-      <li><a href="#" class="nav-link active" data-view="dashboard"><i class="fa-solid fa-gauge"></i> 메인 대시보드</a></li>
-      <li><a href="#" class="nav-link" data-view="analyze"><i class="fa-solid fa-file-waveform"></i> EEG/PSG 데이터 분석</a></li>
-      <li><a href="#" class="nav-link" data-view="stage"><i class="fa-solid fa-chart-area"></i> 수면 단계 분석</a></li>
-      <li><a href="#" class="nav-link" data-view="report"><i class="fa-solid fa-file-medical"></i> 수면 질 리포트</a></li>
-      <li><a href="#" class="nav-link" data-view="screening"><i class="fa-solid fa-shield-heart"></i> 수면 장애 스크리닝</a></li>
-      <li><a href="#" class="nav-link" data-view="guide"><i class="fa-solid fa-lightbulb"></i> 맞춤형 수면 가이드</a></li>
-    </ul>
-    <div class="sidebar-footer">
-      본 서비스는 의료 진단 도구가 아닌<br>AI 기반 수면 분석 스크리닝 프로토타입입니다.
+  </header>
+
+  <main id="view-root" class="view-root" tabindex="-1">
+    <div class="boot-state shell" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      <p>화면을 준비하고 있습니다…</p>
     </div>
-  </aside>
+  </main>
 
-  <!-- ============ Mobile Topbar ============ -->
-  <div class="main-area">
-    <div class="topbar">
-      <div class="brand"><span class="brand-icon"><i class="fa-solid fa-moon"></i></span> SleepAI Lab</div>
-      <button class="hamburger-btn" id="hamburger-btn"><i class="fa-solid fa-bars"></i></button>
-    </div>
-    <nav class="mobile-nav-panel" id="mobile-nav-panel">
-      <a href="#" class="nav-link active" data-view="dashboard"><i class="fa-solid fa-gauge"></i> 메인 대시보드</a>
-      <a href="#" class="nav-link" data-view="analyze"><i class="fa-solid fa-file-waveform"></i> EEG/PSG 데이터 분석</a>
-      <a href="#" class="nav-link" data-view="stage"><i class="fa-solid fa-chart-area"></i> 수면 단계 분석</a>
-      <a href="#" class="nav-link" data-view="report"><i class="fa-solid fa-file-medical"></i> 수면 질 리포트</a>
-      <a href="#" class="nav-link" data-view="screening"><i class="fa-solid fa-shield-heart"></i> 수면 장애 스크리닝</a>
-      <a href="#" class="nav-link" data-view="guide"><i class="fa-solid fa-lightbulb"></i> 맞춤형 수면 가이드</a>
-    </nav>
+  <nav class="tab-bar" aria-label="모바일 주요 메뉴">
+    <a href="#/" data-nav="home"><i class="fa-solid fa-house" aria-hidden="true"></i><span>홈</span></a>
+    <a href="#/analyze" data-nav="analyze"><i class="fa-solid fa-camera-retro" aria-hidden="true"></i><span>분석</span></a>
+    <a href="#/diseases" data-nav="diseases"><i class="fa-solid fa-notes-medical" aria-hidden="true"></i><span>질환</span></a>
+    <a href="#/history" data-nav="history"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i><span>기록</span></a>
+  </nav>
 
-    <!-- ============ 1. 메인 대시보드 ============ -->
-    <section class="view active" id="dashboard">
-      <div class="view-header">
-        <h1>오늘의 수면 상태 요약</h1>
-        <p>가장 최근 분석된 EEG/PSG 데이터를 기반으로 한 수면 요약입니다.</p>
-      </div>
-
-      <div id="dash-empty" class="empty-state">
-        <i class="fa-solid fa-file-waveform"></i>
-        <h3>아직 분석된 수면 데이터가 없습니다</h3>
-        <p>샘플 EEG 데이터를 선택해 데모 분석을 시작해 보세요.</p>
-        <button class="btn-primary" data-goto="analyze"><i class="fa-solid fa-play"></i> EEG 데이터 분석하러 가기</button>
-      </div>
-
-      <div id="dash-content" class="hidden">
-        <div class="hero-summary">
-          <div class="score-hero">
-            <span class="score-label">오늘의 수면 질 점수</span>
-            <div class="score-value"><span id="dash-score">-</span><span>/100</span></div>
-            <span class="score-grade" id="dash-grade">-</span>
-            <span class="score-sample">기반 데이터: <span id="dash-sample-name">-</span></span>
-          </div>
-          <div class="summary-stats">
-            <div class="stat-card">
-              <span class="stat-icon bg-blue"><i class="fa-solid fa-bed"></i></span>
-              <div><div class="stat-label">총 수면 시간</div><div class="stat-value" id="dash-tst">-</div></div>
-            </div>
-            <div class="stat-card">
-              <span class="stat-icon bg-lavender"><i class="fa-solid fa-gauge-high"></i></span>
-              <div><div class="stat-label">수면 효율</div><div class="stat-value" id="dash-eff">-</div></div>
-            </div>
-            <div class="stat-card">
-              <span class="stat-icon bg-amber"><i class="fa-solid fa-bell"></i></span>
-              <div><div class="stat-label">각성 횟수</div><div class="stat-value" id="dash-awakenings">-</div></div>
-            </div>
-            <div class="stat-card">
-              <span class="stat-icon bg-rose"><i class="fa-solid fa-hourglass-half"></i></span>
-              <div><div class="stat-label">입면 시간</div><div class="stat-value" id="dash-sol">-</div></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="dashboard-charts">
-          <div class="card chart-card">
-            <h3>수면 단계 비율</h3>
-            <div class="chart-box"><canvas id="dash-stage-donut"></canvas></div>
-          </div>
-          <div class="card chart-card">
-            <h3>최근 7일 수면 질 점수 추이</h3>
-            <div class="chart-box"><canvas id="dash-weekly-trend"></canvas></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ 2. EEG/PSG 데이터 분석 ============ -->
-    <section class="view" id="analyze">
-      <div class="view-header">
-        <h1>EEG/PSG 데이터 분석</h1>
-        <p>실제 센서가 없어도 시연할 수 있도록 공개 데이터셋 구조를 참고한 샘플 EEG 레코드로 Demo Mode를 제공합니다.</p>
-      </div>
-
-      <div class="upload-panel" id="upload-panel">
-        <div class="card">
-          <h3 style="margin-top:0;color:var(--color-navy)"><i class="fa-solid fa-database"></i> 1. 샘플 EEG/PSG 레코드 선택 (Demo Mode)</h3>
-          <div class="profile-cards" id="profile-cards"></div>
-          <div id="sample-meta" style="margin-top:16px;"></div>
-        </div>
-
-        <div class="card">
-          <h3 style="margin-top:0;color:var(--color-navy)"><i class="fa-solid fa-upload"></i> 2. EEG 데이터 파일 업로드 (선택)</h3>
-          <label class="upload-dropzone" for="file-input">
-            <i class="fa-solid fa-file-arrow-up"></i>
-            <div>
-              <strong style="color:var(--color-navy)">직접 측정한 EEG(.edf, .csv) 파일을 업로드</strong>
-              <div>파일을 끌어다 놓거나 클릭하여 선택하세요. (프로토타입에서는 위 샘플 데이터로 데모가 진행됩니다)</div>
-            </div>
-            <input type="file" id="file-input" style="display:none;">
-          </label>
-        </div>
-
-        <div class="upload-actions">
-          <button class="btn-primary" id="start-analysis-btn" disabled><i class="fa-solid fa-brain"></i> AI 분석 시작</button>
-        </div>
-      </div>
-
-      <div class="card progress-panel hidden" id="progress-panel">
-        <h3 style="color:var(--color-navy)">AI 분석이 진행 중입니다…</h3>
-        <div class="progress-bar-track"><div class="progress-bar-fill" id="progress-bar-fill"></div></div>
-        <ul class="progress-steps" id="progress-steps"></ul>
-      </div>
-
-      <div class="result-panel hidden" id="result-panel">
-        <div class="card result-section">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <h3 style="margin:0;color:var(--color-navy)"><i class="fa-solid fa-wave-square"></i> EEG 원시 파형 (샘플 5초 구간)</h3>
-            <button class="btn-secondary" id="reset-analysis-btn"><i class="fa-solid fa-rotate-left"></i> 다른 데이터로 재분석</button>
-          </div>
-          <div class="chart-box short" style="margin-top:14px;"><canvas id="chart-waveform"></canvas></div>
-        </div>
-
-        <div class="grid grid-2">
-          <div class="card result-section">
-            <h3><i class="fa-solid fa-chart-simple"></i> FFT 주파수 대역 분석</h3>
-            <div class="chart-box short"><canvas id="chart-fft"></canvas></div>
-            <div id="fft-band-desc" style="margin-top:10px;"></div>
-          </div>
-          <div class="card result-section">
-            <h3><i class="fa-solid fa-layer-group"></i> Wavelet 시간-주파수 분석 (야간 전체)</h3>
-            <p style="font-size:0.83rem;color:var(--color-text-soft);margin-top:-6px;">색이 진할수록 해당 수면 단계와 관련된 신호 성분이 강함을 의미합니다.</p>
-            <div class="heatmap-wrap" id="wavelet-heatmap"></div>
-          </div>
-        </div>
-
-        <div style="text-align:center;">
-          <button class="btn-primary" data-goto="stage"><i class="fa-solid fa-arrow-right"></i> 수면 단계 분석 결과 보기</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ 3. 수면 단계 분석 (Hypnogram) ============ -->
-    <section class="view" id="stage">
-      <div class="view-header">
-        <h1>수면 단계 분석 결과</h1>
-        <p>Wake / REM / N1 / N2 / N3 단계를 시간에 따라 분류한 Hypnogram입니다.</p>
-      </div>
-
-      <div class="card">
-        <div class="stage-legend">
-          <span><i class="dot" style="background:#f2994a"></i> Wake</span>
-          <span><i class="dot" style="background:#7c6fe0"></i> REM</span>
-          <span><i class="dot" style="background:#5bc8e0"></i> N1</span>
-          <span><i class="dot" style="background:#3d7ea6"></i> N2</span>
-          <span><i class="dot" style="background:#1f3a63"></i> N3</span>
-        </div>
-        <div class="chart-box tall"><canvas id="chart-hypnogram"></canvas></div>
-      </div>
-
-      <div class="stage-breakdown" id="stage-breakdown"></div>
-
-      <div style="text-align:center;margin-top:26px;">
-        <button class="btn-primary" data-goto="report"><i class="fa-solid fa-arrow-right"></i> 수면 질 리포트 보기</button>
-      </div>
-    </section>
-
-    <!-- ============ 4. 수면 질 리포트 ============ -->
-    <section class="view" id="report">
-      <div class="view-header">
-        <h1>수면 질 리포트</h1>
-        <p>다양한 수면 지표를 종합하여 산출한 수면 질 리포트입니다.</p>
-      </div>
-
-      <div class="report-hero">
-        <div class="score-circle"><span class="num" id="report-score">-</span><span class="lbl">/ 100</span></div>
-        <div class="report-hero-text">
-          <h3>종합 수면 점수 <span class="score-grade" id="report-grade">-</span></h3>
-          <p>수면 효율, 각성 횟수, 입면 시간, 수면 구조(N3/REM 비율) 등을 종합 반영한 프로토타입 지표입니다.</p>
-        </div>
-      </div>
-
-      <div class="report-cards" id="report-cards"></div>
-
-      <div class="card">
-        <h3 style="margin-top:0;color:var(--color-navy)">나의 수면 단계 비율 vs 정상 참고범위</h3>
-        <div class="chart-box"><canvas id="chart-report-compare"></canvas></div>
-      </div>
-
-      <div style="text-align:center;margin-top:26px;">
-        <button class="btn-primary" data-goto="screening"><i class="fa-solid fa-arrow-right"></i> 수면 장애 스크리닝 보기</button>
-      </div>
-    </section>
-
-    <!-- ============ 5. 수면 장애 스크리닝 ============ -->
-    <section class="view" id="screening">
-      <div class="view-header">
-        <h1>수면 장애 스크리닝</h1>
-        <p>EEG 분석 결과에서 관찰되는 패턴을 기반으로 한 참고용 스크리닝입니다.</p>
-        <span class="disclaimer-inline"><i class="fa-solid fa-circle-info"></i> 본 결과는 의료 진단이 아닙니다</span>
-      </div>
-
-      <div class="screening-banner" id="screening-summary-banner">
-        <i class="fa-solid fa-shield-heart"></i>
-        <span id="screening-summary-text">-</span>
-      </div>
-
-      <div class="screening-list" id="screening-list"></div>
-
-      <div class="medical-disclaimer">
-        <i class="fa-solid fa-triangle-exclamation"></i>
+  <footer class="app-footer">
+    <div class="shell footer-inner">
+      <div class="footer-brand">
+        <span class="brand-mark" aria-hidden="true"><i class="fa-solid fa-magnifying-glass-plus"></i></span>
         <div>
-          본 스크리닝 결과는 EEG 신호 패턴 기반의 <strong>참고용 분석</strong>이며, 실제 수면 장애를 진단하지 않습니다.
-          지속적인 수면 문제나 주의가 필요한 패턴이 반복될 경우, <strong>추가적인 전문 검사(수면다원검사 등) 및 의료진 상담</strong>이 필요할 수 있습니다.
+          <strong>더마렌즈 (DermaLens)</strong>
+          <p>DenseNet121 기반 안면 피부질환 분류 모델을 웹앱으로 구현한 진단 보조 서비스 프로토타입입니다.</p>
         </div>
       </div>
 
-      <div style="text-align:center;margin-top:26px;">
-        <button class="btn-primary" data-goto="guide"><i class="fa-solid fa-arrow-right"></i> 맞춤형 수면 가이드 보기</button>
-      </div>
-    </section>
+      <nav class="footer-nav" aria-label="푸터 메뉴">
+        <a href="#/about">프로젝트 소개</a>
+      </nav>
 
-    <!-- ============ 6. 맞춤형 수면 가이드 ============ -->
-    <section class="view" id="guide">
-      <div class="view-header">
-        <h1>개인 맞춤형 수면 가이드</h1>
-        <p>분석 결과를 바탕으로 한 실천 가능한 수면 개선 제안입니다.</p>
+      <div class="footer-disclaimer">
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+        <p><strong>의료정보 안내</strong> — 본 서비스는 의학적 진단이 아닌 확인 보조 수단이며, 분석 결과는 참고용입니다. 정확한 진단과 치료는 반드시 피부과 전문의와 상담하세요.</p>
       </div>
 
-      <div class="guide-sections" id="guide-sections"></div>
+      <p class="footer-meta">
+        <span>AI Hub 피부질환 데이터셋 기반 지도학습·전이학습</span>
+        <span aria-hidden="true">·</span>
+        <span>Python · PyTorch</span>
+        <span aria-hidden="true">·</span>
+        <span>© <span id="footer-year">2026</span> 더마렌즈 프로젝트</span>
+      </p>
+    </div>
+  </footer>
 
-      <div class="tonight-card">
-        <h3><i class="fa-solid fa-star"></i> 오늘 밤 바로 실천해보세요</h3>
-        <ul id="guide-tonight"></ul>
-      </div>
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="false"></div>
 
-      <div style="text-align:center;margin-top:26px;">
-        <button class="btn-primary" data-goto="dashboard"><i class="fa-solid fa-gauge"></i> 대시보드로 돌아가기</button>
-      </div>
-    </section>
-
-    <!-- ============ Gate: 분석 전 접근 차단 안내 ============ -->
-    <section class="view gate-view" id="analyze-gate">
-      <div class="gate-box">
-        <i class="fa-solid fa-lock"></i>
-        <h3><span id="gate-target">해당 화면</span>을 보려면 먼저 EEG 분석이 필요합니다</h3>
-        <p>샘플 데이터를 선택하고 AI 분석을 진행하면 결과를 확인할 수 있습니다.</p>
-        <button class="btn-primary" id="gate-go-analyze"><i class="fa-solid fa-play"></i> EEG 데이터 분석하러 가기</button>
-      </div>
-    </section>
-
-    <p class="global-disclaimer">SleepAI Lab은 실제 의료 진단을 대체하지 않는 AI 기반 수면 분석 · 조기 스크리닝 프로토타입입니다. 모든 데이터는 시연용 샘플입니다.</p>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-<script src="js/data.js"></script>
-<script src="js/app.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

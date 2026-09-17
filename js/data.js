@@ -1,460 +1,270 @@
-/* =========================================================================
-   SleepAI Lab - Demo Data & Analysis Engine
-   -------------------------------------------------------------------------
-   실제 EEG 센서가 연결되지 않은 상태에서도 발표/시연이 가능하도록,
-   Sleep-EDF / SHHS 공개 데이터셋 구조를 참고한 "샘플 PSG 레코드"를
-   시드 기반 난수로 생성하고, 이를 분석한 결과(수면 단계, 수면질 점수,
-   스크리닝, 맞춤 가이드)를 계산해서 반환하는 데모 엔진입니다.
-   ⚠️ 실제 신호처리/딥러닝 추론이 아닌, 발표용 프로토타입 시뮬레이션입니다.
-   ========================================================================= */
+/* ==========================================================================
+   data.js — 서비스 콘텐츠 데이터
+   --------------------------------------------------------------------------
+   출처 우선순위
+   1) 원본 프로젝트 개요 (사용자 제공)  ← 프로젝트의 실제 내용 기준
+   2) 기획 자료(피부 .pptx)에서 확인된 내용
+   두 자료가 다를 경우 원본 프로젝트 개요를 기준으로 정리했습니다.
+   자료에서 확인되지 않은 수치·기능은 임의로 만들어 넣지 않았습니다.
+   ========================================================================== */
 
-(function (global) {
-  'use strict';
+const DATA = {
+  /* ------------------------------------------------------------------------
+     서비스 기본 정보
+     ------------------------------------------------------------------------ */
+  service: {
+    name: '더마렌즈',
+    nameEn: 'DermaLens',
+    tagline: '사진 한 장으로 분석하는 피부질환',
+    summary: 'Python과 DenseNet121 기반 이미지 분류 모델로 구현하는 안면 피부질환 진단 보조 웹앱',
+    objective: 'Python을 활용한 안면 피부질환 진단 모바일앱 제작 — 실제 데이터를 활용한 진단 앱',
+    classCount: 6
+  },
 
-  // ---------- 시드 기반 난수 (매 시연마다 동일한 결과를 재현하기 위함) ----------
-  function mulberry32(seed) {
-    return function () {
-      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
-  const STAGES = ['Wake', 'REM', 'N1', 'N2', 'N3'];
-  const STAGE_LABEL = { Wake: '각성(Wake)', REM: '렘수면(REM)', N1: '얕은수면(N1)', N2: '중간수면(N2)', N3: '깊은수면(N3)' };
-  const STAGE_COLOR = { Wake: '#f2994a', REM: '#7c6fe0', N1: '#5bc8e0', N2: '#3d7ea6', N3: '#1f3a63' };
-  const EPOCH_SEC = 30;
-
-  // AASM 성인 정상 참고 범위 (프로토타입 안내용, 참고치)
-  const NORMAL_RANGE = {
-    Wake: [3, 8],
-    REM: [20, 25],
-    N1: [3, 8],
-    N2: [45, 55],
-    N3: [13, 23]
-  };
-
-  // -------------------------------------------------------------------
-  // 1. 샘플 레코드 메타데이터 (Sleep-EDF / SHHS 유사 구조)
-  // -------------------------------------------------------------------
-  const PROFILES = [
+  /* ------------------------------------------------------------------------
+     프로젝트 목표 (원본 프로젝트 개요 기준)
+     ------------------------------------------------------------------------ */
+  goals: [
     {
-      key: 'normal',
-      name: 'SC4001E0 - 건강 성인 표본',
-      subtitle: '정상 수면 패턴 샘플',
-      dataset: 'Sleep-EDF Expanded (simulated)',
-      subject: 'Subject #4001 · 32세 · 여성',
-      channels: ['EEG Fpz-Cz', 'EEG Pz-Oz', 'EOG horizontal', 'EMG submental'],
-      sampleRate: '100 Hz',
-      recordDate: '2026-03-11',
-      duration: '8h 02m (Lights off 23:14 ~ 07:16)',
-      seed: 12345,
-      arousalRate: 0.03,
-      sol: 11,
-      targetTIB: 482,
-      style: 'normal'
+      icon: 'fa-solid fa-stethoscope',
+      accent: 'teal',
+      title: '진단 보조 도구로 활용',
+      text: '병변 이미지를 분석해 6가지 안면부 병변 유형을 분류하고, 진단과 치료 결정을 보조합니다.'
     },
     {
-      key: 'apnea',
-      name: 'ST7022J0 - 수면호흡 이상 의심 표본',
-      subtitle: '잦은 각성 · 얕은 수면 우세 패턴',
-      dataset: 'SHHS Polysomnography (simulated)',
-      subject: 'Subject #7022 · 54세 · 남성',
-      channels: ['EEG C4-A1', 'EEG C3-A2', 'EOG', 'EMG chin', 'SpO2(참고)'],
-      sampleRate: '125 Hz',
-      recordDate: '2026-04-02',
-      duration: '7h 48m (Lights off 00:02 ~ 07:50)',
-      seed: 98765,
-      arousalRate: 0.14,
-      sol: 18,
-      targetTIB: 468,
-      style: 'apnea'
+      icon: 'fa-solid fa-tower-broadcast',
+      accent: 'violet',
+      title: '원격 진료 서비스에 적용',
+      text: '모바일로 업로드된 안면부 이미지를 분석하고, 전문의 상담이 필요한지 안내하는 방향으로 확장합니다.'
     },
     {
-      key: 'irregular',
-      name: 'SC4092G0 - 불규칙 수면 패턴 표본',
-      subtitle: '지연된 입면 · 야간 각성 구간 포함',
-      dataset: 'Sleep-EDF Expanded (simulated)',
-      subject: 'Subject #4092 · 27세 · 남성 (교대근무)',
-      channels: ['EEG Fpz-Cz', 'EEG Pz-Oz', 'EOG horizontal', 'EMG submental'],
-      sampleRate: '100 Hz',
-      recordDate: '2026-02-20',
-      duration: '7h 20m (Lights off 01:10 ~ 08:30)',
-      seed: 55221,
-      arousalRate: 0.08,
-      sol: 46,
-      targetTIB: 440,
-      style: 'irregular'
+      icon: 'fa-solid fa-flask-vial',
+      accent: 'amber',
+      title: '연구·데이터 분석 활용',
+      text: '학습된 모델은 환자의 피부과 진료 지원과 연구 및 데이터 분석에 활용할 수 있습니다.'
+    },
+    {
+      icon: 'fa-solid fa-user-gear',
+      accent: 'ink',
+      title: '개인화 서비스 추진',
+      text: '학습된 모델을 활용해 모바일앱으로 발전시키고 개인화 서비스를 추진합니다.'
     }
-  ];
+  ],
 
-  // -------------------------------------------------------------------
-  // 2. Hypnogram(수면 단계) 생성기
-  // -------------------------------------------------------------------
-  function pushMinutes(arr, stage, minutes) {
-    const epochs = Math.max(1, Math.round((minutes * 60) / EPOCH_SEC));
-    for (let i = 0; i < epochs; i++) arr.push(stage);
-  }
-
-  function jitter(rng, base, pct) {
-    const delta = base * pct * (rng() * 2 - 1);
-    return Math.max(0.5, base + delta);
-  }
-
-  function buildHypnogram(profile) {
-    const rng = mulberry32(profile.seed);
-    const stages = [];
-
-    // 입면 전 각성 (Sleep Onset Latency)
-    pushMinutes(stages, 'Wake', jitter(rng, profile.sol, 0.15));
-
-    let cycles = 4 + Math.floor(rng() * 2); // 4~5 수면 주기
-    if (profile.style === 'irregular') cycles = 3;
-
-    for (let c = 0; c < cycles; c++) {
-      const progress = c / (cycles - 1 || 1); // 0(초반) -> 1(후반)
-
-      // N1 (얕은 진입)
-      pushMinutes(stages, 'N1', jitter(rng, profile.style === 'apnea' ? 5 : 3, 0.3));
-
-      // N2
-      pushMinutes(stages, 'N2', jitter(rng, 14, 0.25));
-
-      // N3 - 초반 주기에 많고 후반에 감소, apnea/irregular는 전반적으로 저하
-      let n3base = (18 - progress * 14);
-      if (profile.style === 'apnea') n3base *= 0.45;
-      if (profile.style === 'irregular') n3base *= 0.6;
-      if (n3base > 1.5) pushMinutes(stages, 'N3', jitter(rng, n3base, 0.3));
-
-      pushMinutes(stages, 'N2', jitter(rng, 8, 0.3));
-
-      // REM - 후반 주기로 갈수록 길어짐
-      let remBase = 6 + progress * 18;
-      if (profile.style === 'apnea') remBase *= 0.7;
-      pushMinutes(stages, 'REM', jitter(rng, remBase, 0.3));
-
-      // 각성/미세각성 삽입 (arousalRate가 높을수록 빈번)
-      const arousalRoll = rng();
-      if (arousalRoll < profile.arousalRate * 3) {
-        pushMinutes(stages, 'Wake', jitter(rng, profile.style === 'apnea' ? 2.5 : 1.5, 0.4));
-      }
-      // apnea 프로파일은 각 주기 내부에도 짧은 각성을 다수 삽입 (무호흡 후 각성 패턴 모사)
-      if (profile.style === 'apnea') {
-        const microCount = 2 + Math.floor(rng() * 3);
-        for (let m = 0; m < microCount; m++) {
-          pushMinutes(stages, 'N2', jitter(rng, 4, 0.3));
-          pushMinutes(stages, 'Wake', jitter(rng, 0.8, 0.5));
-        }
-      }
+  /* ------------------------------------------------------------------------
+     6가지 분류 (원본 프로젝트 기준)
+     건선 · 아토피 · 여드름 · 주사 · 지루 · 정상
+     ------------------------------------------------------------------------ */
+  diseases: [
+    {
+      id: 'psoriasis',
+      ko: '건선',
+      en: 'Psoriasis',
+      icon: 'fa-solid fa-layer-group',
+      accent: 'teal',
+      tagline: '만성 염증성 피부질환',
+      description: '만성 염증성 피부질환으로 피부 세포의 과도한 증식이 특징입니다.',
+      tags: ['만성', '염증성', '세포 과다 증식'],
+      source: 'deck'
+    },
+    {
+      id: 'atopic',
+      ko: '아토피',
+      en: 'Atopic Dermatitis',
+      icon: 'fa-solid fa-hand-dots',
+      accent: 'violet',
+      tagline: '반복적인 염증 반응',
+      description: '가려움증과 반복적인 염증 반응이 특징인 만성 피부질환입니다.',
+      tags: ['가려움증', '반복성', '만성'],
+      source: 'deck'
+    },
+    {
+      id: 'acne',
+      ko: '여드름',
+      en: 'Acne',
+      icon: 'fa-solid fa-circle-dot',
+      accent: 'amber',
+      tagline: '모낭 염증',
+      description: '피지선 과다 분비로 인해 발생하는 모낭 염증입니다.',
+      tags: ['피지선 과다 분비', '모낭 염증'],
+      source: 'deck'
+    },
+    {
+      id: 'rosacea',
+      ko: '주사',
+      en: 'Rosacea',
+      icon: 'fa-solid fa-fire-flame-simple',
+      accent: 'rose',
+      tagline: '안면 홍조·혈관 확장',
+      description: '얼굴 중앙부에 홍조와 혈관 확장, 반복되는 염증성 병변이 나타나는 만성 피부질환입니다.',
+      tags: ['안면 홍조', '혈관 확장', '만성'],
+      source: 'term',
+      sourceNote: '기획 자료에는 설명이 없어 일반적인 용어 정의로 정리했습니다.'
+    },
+    {
+      id: 'seborrheic',
+      ko: '지루',
+      en: 'Seborrheic Dermatitis',
+      icon: 'fa-solid fa-droplet',
+      accent: 'teal',
+      tagline: '지루성 피부염',
+      description: '피지 분비가 왕성한 부위(눈썹·이마·코 주변)에 홍조와 인설이 반복되는 만성 염증성 피부질환입니다.',
+      tags: ['피지 분비 부위', '홍조', '인설'],
+      source: 'term',
+      sourceNote: '기획 자료에는 설명이 없어 일반적인 용어 정의로 정리했습니다.'
+    },
+    {
+      id: 'normal',
+      ko: '정상',
+      en: 'Normal',
+      icon: 'fa-solid fa-circle-check',
+      accent: 'mint',
+      tagline: '병변 소견 없음',
+      description: '안면부에서 병변으로 분류할 만한 뚜렷한 소견이 관찰되지 않은 상태를 나타내는 클래스입니다.',
+      tags: ['병변 소견 없음', '정상 범주'],
+      source: 'term',
+      sourceNote: '모델이 구분하는 클래스 중 하나로, 서비스에서는 "병변 소견 없음"을 의미합니다.'
     }
+  ],
 
-    // irregular 프로파일: 야간 중간에 긴 각성 구간 삽입 (불규칙 패턴)
-    if (profile.style === 'irregular') {
-      const insertAt = Math.floor(stages.length * 0.55);
-      const wakeBlock = [];
-      pushMinutes(wakeBlock, 'Wake', jitter(rng, 22, 0.3));
-      stages.splice(insertAt, 0, ...wakeBlock);
-      pushMinutes(stages, 'N2', jitter(rng, 10, 0.3));
-      pushMinutes(stages, 'REM', jitter(rng, 8, 0.3));
+  /* ------------------------------------------------------------------------
+     프로젝트 결과물 (원본 프로젝트 개요 기준)
+     ------------------------------------------------------------------------ */
+  deliverables: [
+    { icon: 'fa-solid fa-diagram-project', text: '<b>피부질환 감지 모델</b> — 건선·아토피·여드름·주사·지루·정상 6개 Class를 인식하는 분류 모델' },
+    { icon: 'fa-solid fa-database', text: '<b>실제 데이터 학습</b> — aihub.or.kr 피부질환 데이터셋을 활용한 학습 파이프라인' },
+    { icon: 'fa-solid fa-mobile-screen-button', text: '<b>원격 진료 지원</b> — 스마트폰 카메라를 통한 피부 상태 평가' },
+    { icon: 'fa-solid fa-code', text: '<b>웹앱 구현</b> — HTML · CSS · JS 기반 WebApp' },
+    { icon: 'fa-solid fa-diagram-successor', text: '<b>확장 로드맵</b> — 습진, 백반증 등 추가 질환 모델 개발' }
+  ],
+
+  /* ------------------------------------------------------------------------
+     AI 모델 및 기술 구성
+     ------------------------------------------------------------------------ */
+  tech: [
+    {
+      title: '모델 아키텍처',
+      icon: 'fa-solid fa-diagram-project',
+      accent: 'teal',
+      detail: 'DenseNet121 기반 이미지 분류 모델로, 밀집 연결(dense connection) 구조를 통해 특징 재활용과 그래디언트 흐름을 극대화합니다.'
+    },
+    {
+      title: '학습 데이터 및 방법',
+      icon: 'fa-solid fa-graduation-cap',
+      accent: 'violet',
+      detail: 'aihub.or.kr 피부질환 실제 데이터셋을 활용해 지도학습 및 전이학습을 적용합니다.'
+    },
+    {
+      title: '개발 스택',
+      icon: 'fa-solid fa-code',
+      accent: 'amber',
+      detail: 'Python · PyTorch로 모델을 개발하고, 웹앱은 HTML · CSS · JS로 구현합니다. 하이퍼파라미터 튜닝과 앙상블 기법, 모바일 환경을 고려한 경량화 최적화를 함께 다룹니다.'
     }
+  ],
 
-    // 최종 기상
-    pushMinutes(stages, 'Wake', jitter(rng, 4, 0.3));
+  stackPills: [
+    'Python', 'PyTorch', 'DenseNet121', 'aihub.or.kr DataSet', '지도학습', '전이학습',
+    '밀집 연결 구조', '6가지 분류', '하이퍼파라미터 튜닝', '앙상블',
+    '경량화 최적화', 'WebApp (HTML · CSS · JS)'
+  ],
 
-    return scaleToTarget(stages, profile.targetTIB);
-  }
+  /* ------------------------------------------------------------------------
+     문제 → 해결 구조
+     ------------------------------------------------------------------------ */
+  problem: {
+    painPoints: [
+      '피부질환은 초기 상태 확인과 적절한 진료가 중요하지만, 피부과 접근성에는 시간·거리·비용이라는 현실적인 장벽이 존재합니다.',
+      '전문 의료기관에 의존하던 피부 상태 확인을 AI 이미지 분석으로 보완합니다.'
+    ],
+    solutions: [
+      { icon: 'fa-solid fa-clock', title: '언제 어디서나 분석', text: 'AI 기반 이미지 분석으로 장소와 시간에 구애받지 않고 피부 상태를 즉시 확인할 수 있습니다.' },
+      { icon: 'fa-solid fa-hospital-user', title: '의료 접근성 향상', text: '진단 보조 서비스로서 전문 의료기관 방문 전 사전 정보를 제공합니다.' },
+      { icon: 'fa-solid fa-notes-medical', title: '분류 · 기록 · 관리', text: '누구나 손쉽게 피부 상태를 분류하고 기록·관리할 수 있도록 합니다.' }
+    ]
+  },
 
-  // 생성된 에폭 시퀀스를 목표 총 침상 시간(TIB, 분)에 맞춰 리샘플링
-  // (프로필에 기재된 "Lights off ~ Lights on" 총 시간과 일치시키기 위함)
-  function scaleToTarget(stages, targetMinutes) {
-    if (!targetMinutes) return stages;
-    const targetEpochs = Math.round((targetMinutes * 60) / EPOCH_SEC);
-    if (targetEpochs === stages.length || stages.length === 0) return stages;
-    const out = new Array(targetEpochs);
-    const ratio = stages.length / targetEpochs;
-    for (let i = 0; i < targetEpochs; i++) {
-      out[i] = stages[Math.min(stages.length - 1, Math.floor(i * ratio))];
-    }
-    return out;
-  }
+  /* ------------------------------------------------------------------------
+     구현 범위 — 현재 구현 vs 향후 확장
+     원본 프로젝트의 '목표 / 결과물' 과 기획 자료의 '개발 스택' 서술을 기준으로
+     정리했습니다. 어느 자료에도 구현 시점이 명시되지 않은 항목은 향후 확장으로
+     분류했습니다.
+     ------------------------------------------------------------------------ */
+  scope: {
+    nowTitle: '현재 구현 내용',
+    nowNote: '프로젝트 결과물로 제시된 항목입니다.',
+    now: [
+      '<b>6가지 분류 피부질환 감지 모델</b> — 건선 · 아토피 · 여드름 · 주사 · 지루 · 정상 인식',
+      '<b>DenseNet121 기반 이미지 분류</b> — 밀집 연결 구조를 활용한 안면부 병변 분석',
+      '<b>aihub.or.kr 실제 데이터셋 활용</b> — 지도학습 및 전이학습 적용',
+      '<b>Python · PyTorch 개발</b> — 모델 학습·실험 파이프라인',
+      '<b>웹앱(HTML · CSS · JS) 구현</b> — 이미지 업로드/촬영 → 분석 → 결과 → 질환 정보 → 기록 흐름',
+      '<b>스마트폰 카메라 기반 피부 상태 평가</b> — 원격 진료 지원을 위한 촬영·분석 화면',
+      '<b>진단 보조 정보 제공</b> — 병변 유형 분류 결과와 질환 정보 안내'
+    ],
+    nextTitle: '향후 확장 예정',
+    nextNote: '프로젝트 목표·로드맵으로 제시된 항목입니다.',
+    next: [
+      '<b>실제 모델 서빙 연동</b> — 현재 웹앱의 분석 결과를 실제 모델 추론으로 교체',
+      '<b>원격 진료 서비스 적용</b> — 병변 유형과 <b>심각도 평가</b>, 전문의 상담 여부 안내',
+      '<b>개인화 서비스 추진</b> — 학습된 모델을 활용한 모바일앱 확장',
+      '<b>다양한 피부질환 확장</b> — 습진, 백반증 등 추가 질환 모델 개발',
+      '<b>모델 고도화</b> — 하이퍼파라미터 튜닝 · 앙상블 기법 · 모바일 환경 경량화 최적화'
+    ],
+    footnote: '현재/향후 구분은 제공된 프로젝트 개요와 기획 자료의 서술을 기준으로 정리했습니다.'
+  },
 
-  // -------------------------------------------------------------------
-  // 3. 통계 계산
-  // -------------------------------------------------------------------
-  function computeStats(hypnogram) {
-    const total = hypnogram.length;
-    const counts = { Wake: 0, REM: 0, N1: 0, N2: 0, N3: 0 };
-    hypnogram.forEach(s => counts[s]++);
+  /* 기획 자료에 명시된 확장 로드맵 질환 */
+  expansionRoadmap: [
+    { ko: '습진', en: 'Eczema' },
+    { ko: '백반증', en: 'Vitiligo' }
+  ],
 
-    const minutesOf = s => (counts[s] * EPOCH_SEC) / 60;
-    const tib = (total * EPOCH_SEC) / 60; // Time in Bed (분)
-    const tst = tib - minutesOf('Wake');  // Total Sleep Time (분)
-    const efficiency = Math.round((tst / tib) * 1000) / 10;
+  /* ------------------------------------------------------------------------
+     서비스 화면 흐름
+     ------------------------------------------------------------------------ */
+  flow: [
+    { title: '홈 — 서비스 이해', text: '서비스 목적, 6가지 분류, 모델 구성, 현재 구현/확장 범위를 한 화면에서 파악합니다.' },
+    { title: '피부 분석 — 이미지 준비', text: '스마트폰 카메라로 촬영하거나 안면 사진을 업로드하고, 촬영 가이드에 맞춰 이미지를 준비합니다.' },
+    { title: 'AI 분석 진행', text: '전처리 → 특징 추출 → 클래스 분류 단계를 시각화하며 진행 상태를 보여줍니다.' },
+    { title: '분석 결과 확인', text: '6가지 분류별 확률과 상위 예측 결과를 확인합니다.' },
+    { title: '질환 정보 확인', text: '분류된 클래스의 특징을 확인하고 주의사항을 안내받습니다.' },
+    { title: '분석 기록 관리', text: '분석 결과를 저장하고 이전 기록을 다시 열어 확인합니다.' }
+  ],
 
-    // 입면 시간(SOL): 처음 Wake 구간 길이
-    let sol = 0;
-    for (const s of hypnogram) { if (s === 'Wake') sol += EPOCH_SEC / 60; else break; }
+  /* ------------------------------------------------------------------------
+     촬영 / 업로드 가이드
+     ------------------------------------------------------------------------ */
+  guideGood: [
+    '얼굴이 정면을 향한 이미지',
+    '밝고 균일한 조명 아래에서 촬영',
+    '병변 부위가 화면 중앙에 오도록 촬영',
+    '흐림·반사·과도한 보정이 없는 원본 이미지'
+  ],
+  guideBad: [
+    '지나치게 어둡거나 측면에서 촬영한 이미지',
+    '강한 플래시로 번들거림이 생긴 이미지',
+    '여러 명이 함께 나온 이미지',
+    '필터·스티커가 적용된 이미지'
+  ],
 
-    // 중간 각성 횟수: Wake가 아닌 상태 -> Wake로 전환되는 횟수 (첫 SOL, 마지막 최종기상 제외)
-    let awakenings = 0;
-    for (let i = 1; i < hypnogram.length - 1; i++) {
-      if (hypnogram[i] === 'Wake' && hypnogram[i - 1] !== 'Wake') awakenings++;
-    }
-    // 마지막 최종 기상은 카운트에서 제외 (자연 기상)
-    awakenings = Math.max(0, awakenings - 1);
+  /* ------------------------------------------------------------------------
+     분석 단계 (프로토타입 시각화용)
+     ------------------------------------------------------------------------ */
+  analysisStages: [
+    { icon: 'fa-solid fa-crop-simple', label: '이미지 전처리', sub: '크기·조명 정규화 및 안면부 영역 정렬' },
+    { icon: 'fa-solid fa-layer-group', label: '특징 추출', sub: 'DenseNet121 밀집 연결 블록 통과' },
+    { icon: 'fa-solid fa-chart-simple', label: '클래스 분류', sub: '6가지 분류 확률 산출' },
+    { icon: 'fa-solid fa-file-medical', label: '결과 정리', sub: '상위 예측과 참고 정보 생성' }
+  ],
 
-    // WASO: 입면 이후 ~ 최종기상 전까지의 Wake 총합 (SOL 제외, 마지막 기상 블록 제외)
-    let lastSleepIdx = hypnogram.length - 1;
-    while (lastSleepIdx >= 0 && hypnogram[lastSleepIdx] === 'Wake') lastSleepIdx--;
-    let firstSleepIdx = 0;
-    while (firstSleepIdx < hypnogram.length && hypnogram[firstSleepIdx] === 'Wake') firstSleepIdx++;
-    let wasoEpochs = 0;
-    for (let i = firstSleepIdx; i <= lastSleepIdx; i++) if (hypnogram[i] === 'Wake') wasoEpochs++;
-    const waso = Math.round((wasoEpochs * EPOCH_SEC) / 60);
-
-    const stagePct = {};
-    STAGES.forEach(s => { stagePct[s] = Math.round((counts[s] / total) * 1000) / 10; });
-
-    const remNremRatio = Math.round((counts.REM / (counts.N1 + counts.N2 + counts.N3)) * 1000) / 10;
-
-    return {
-      tib: Math.round(tib), tst: Math.round(tst), efficiency,
-      sol: Math.round(sol), waso, awakenings,
-      stageMinutes: { Wake: Math.round(minutesOf('Wake')), REM: Math.round(minutesOf('REM')), N1: Math.round(minutesOf('N1')), N2: Math.round(minutesOf('N2')), N3: Math.round(minutesOf('N3')) },
-      stagePct, remNremRatio
-    };
-  }
-
-  // -------------------------------------------------------------------
-  // 4. 수면 질 점수 (0~100) — 여러 지표를 가중합
-  // -------------------------------------------------------------------
-  function computeScore(stats) {
-    let score = 100;
-    // 수면 효율 (목표 85%+)
-    score -= Math.max(0, 88 - stats.efficiency) * 1.3;
-    // 각성 횟수 (목표 3회 이하)
-    score -= Math.max(0, stats.awakenings - 3) * 2.2;
-    // 입면시간 (목표 20분 이하)
-    score -= Math.max(0, stats.sol - 20) * 0.5;
-    // 깊은 수면 비율 (목표 13~23%)
-    if (stats.stagePct.N3 < NORMAL_RANGE.N3[0]) score -= (NORMAL_RANGE.N3[0] - stats.stagePct.N3) * 1.8;
-    // REM 비율 (목표 20~25%)
-    if (stats.stagePct.REM < NORMAL_RANGE.REM[0]) score -= (NORMAL_RANGE.REM[0] - stats.stagePct.REM) * 1.2;
-    // WASO
-    score -= Math.max(0, stats.waso - 20) * 0.4;
-
-    score = Math.round(Math.max(35, Math.min(98, score)));
-    let grade = '좋음';
-    if (score < 60) grade = '주의 필요';
-    else if (score < 75) grade = '보통';
-    else if (score < 88) grade = '양호';
-    else grade = '매우 좋음';
-    return { score, grade };
-  }
-
-  // -------------------------------------------------------------------
-  // 5. EEG 파형 & FFT/Wavelet 시각화용 데이터 생성
-  // -------------------------------------------------------------------
-  function buildWaveform(profile, stats) {
-    const rng = mulberry32(profile.seed + 7);
-    const n = 500; // 5초 구간, 100Hz 가정
-    const raw = [];
-    // 프로파일 특성에 따라 대역 가중치 다르게
-    const weights = profile.style === 'normal'
-      ? { delta: 1.4, theta: 0.6, alpha: 0.3, beta: 0.25, gamma: 0.1 }
-      : profile.style === 'apnea'
-        ? { delta: 0.5, theta: 0.7, alpha: 0.6, beta: 0.9, gamma: 0.3 }
-        : { delta: 0.7, theta: 0.9, alpha: 0.7, beta: 0.6, gamma: 0.2 };
-
-    for (let i = 0; i < n; i++) {
-      const t = i / 100;
-      let v = 0;
-      v += weights.delta * Math.sin(2 * Math.PI * 1.5 * t);
-      v += weights.theta * 0.7 * Math.sin(2 * Math.PI * 5.5 * t + 1);
-      v += weights.alpha * 0.5 * Math.sin(2 * Math.PI * 10 * t + 2);
-      v += weights.beta * 0.35 * Math.sin(2 * Math.PI * 20 * t + 0.5);
-      v += weights.gamma * 0.2 * Math.sin(2 * Math.PI * 38 * t);
-      v += (rng() - 0.5) * 0.25; // 노이즈
-      raw.push(Math.round(v * 100) / 100);
-    }
-
-    // FFT 밴드 파워(%) - 수면단계 비율과 상관성 있게 산출
-    const deltaPower = 30 + stats.stagePct.N3 * 1.6 + (rng() * 4 - 2);
-    const thetaPower = 18 + stats.stagePct.N1 * 1.1 + stats.stagePct.REM * 0.4 + (rng() * 3 - 1.5);
-    const alphaPower = 14 + stats.stagePct.Wake * 0.9 + (rng() * 3 - 1.5);
-    const betaPower = 10 + stats.stagePct.Wake * 0.6 + stats.awakenings * 0.6 + (rng() * 3 - 1.5);
-    let gammaPower = 100 - deltaPower - thetaPower - alphaPower - betaPower;
-    gammaPower = Math.max(4, gammaPower);
-    const sum = deltaPower + thetaPower + alphaPower + betaPower + gammaPower;
-    const norm = v => Math.round((v / sum) * 1000) / 10;
-
-    const bands = [
-      { key: 'delta', label: 'Delta (0.5-4Hz)', desc: '깊은 서파수면(N3)과 밀접', value: norm(deltaPower), color: '#1f3a63' },
-      { key: 'theta', label: 'Theta (4-8Hz)', desc: '얕은 수면·REM 진입 시 증가', value: norm(thetaPower), color: '#3d7ea6' },
-      { key: 'alpha', label: 'Alpha (8-13Hz)', desc: '이완/각성 상태에서 우세', value: norm(alphaPower), color: '#5bc8e0' },
-      { key: 'beta', label: 'Beta (13-30Hz)', desc: '각성·미세각성 시 증가', value: norm(betaPower), color: '#f2994a' },
-      { key: 'gamma', label: 'Gamma (30Hz+)', desc: '고차 인지활동 관련 고주파', value: norm(gammaPower), color: '#c0577a' }
-    ];
-
-    // Wavelet 유사 시간-주파수 히트맵 (야간 전체를 20 구간으로 나눔)
-    const heat = [];
-    const segs = 24;
-    for (let i = 0; i < segs; i++) {
-      const frac = i / segs;
-      const idx = Math.floor(frac * stats._hypLength);
-      const stage = stats._hyp[idx] || 'N2';
-      const row = STAGES.map(band => {
-        let base = 0.2;
-        if (band === 'N3' && stage === 'N3') base = 0.9;
-        if (band === 'N2' && (stage === 'N2' || stage === 'N3')) base = 0.6;
-        if (band === 'REM' && stage === 'REM') base = 0.85;
-        if (band === 'N1' && (stage === 'N1' || stage === 'REM')) base = 0.55;
-        if (band === 'Wake' && stage === 'Wake') base = 0.95;
-        return Math.min(1, Math.max(0.05, base + (rng() * 0.2 - 0.1)));
-      });
-      heat.push(row);
-    }
-
-    return { raw, bands, heat, segs };
-  }
-
-  // -------------------------------------------------------------------
-  // 6. 수면 장애 스크리닝 (진단 아님 — 패턴 스크리닝만 제공)
-  // -------------------------------------------------------------------
-  function buildScreening(profile, stats) {
-    const items = [];
-
-    // 1) 수면무호흡 의심 패턴: 잦은 미세각성 + N1 증가 + 낮은 효율
-    const apneaScore = stats.awakenings * 2 + Math.max(0, stats.stagePct.N1 - 8) * 3 + Math.max(0, 90 - stats.efficiency);
-    items.push({
-      key: 'apnea',
-      title: '수면 무호흡 의심 패턴',
-      level: apneaScore > 45 ? 'warn' : apneaScore > 25 ? 'watch' : 'normal',
-      metric: `시간당 각성 추정 ${(stats.awakenings / (stats.tst / 60)).toFixed(1)}회, N1 비율 ${stats.stagePct.N1}%`,
-      desc: '호흡 정지 후 발생하는 미세 각성(Arousal)과 얕은 수면 비율 증가 패턴을 기반으로 스크리닝한 결과입니다.'
-    });
-
-    // 2) 잦은 각성
-    items.push({
-      key: 'arousal',
-      title: '잦은 각성',
-      level: stats.awakenings >= 12 ? 'warn' : stats.awakenings >= 6 ? 'watch' : 'normal',
-      metric: `중간 각성 ${stats.awakenings}회 · WASO ${stats.waso}분`,
-      desc: '수면 중 각성 빈도와 입면 후 각성시간(WASO)이 정상 범위를 벗어나는지 확인합니다.'
-    });
-
-    // 3) 수면 구조 이상 (N3/REM 결핍)
-    const structureIssue = stats.stagePct.N3 < NORMAL_RANGE.N3[0] - 3 || stats.stagePct.REM < NORMAL_RANGE.REM[0] - 5;
-    items.push({
-      key: 'structure',
-      title: '수면 구조 이상',
-      level: structureIssue ? 'warn' : (stats.stagePct.N3 < NORMAL_RANGE.N3[0] ? 'watch' : 'normal'),
-      metric: `N3 ${stats.stagePct.N3}% (정상 ${NORMAL_RANGE.N3[0]}-${NORMAL_RANGE.N3[1]}%), REM ${stats.stagePct.REM}% (정상 ${NORMAL_RANGE.REM[0]}-${NORMAL_RANGE.REM[1]}%)`,
-      desc: '깊은 수면(N3)과 렘수면(REM) 비율이 정상 참고범위 대비 부족한지 비교합니다.'
-    });
-
-    // 4) 불규칙 수면 패턴 (SOL 지연 + 긴 야간각성)
-    items.push({
-      key: 'irregular',
-      title: '불규칙한 수면 패턴',
-      level: stats.sol > 40 ? 'warn' : stats.sol > 25 ? 'watch' : 'normal',
-      metric: `입면 시간(SOL) ${stats.sol}분`,
-      desc: '입면까지 걸리는 시간과 야간 각성 분포가 불규칙한지, 생체리듬 변동 가능성을 스크리닝합니다.'
-    });
-
-    return items;
-  }
-
-  // -------------------------------------------------------------------
-  // 7. 개인 맞춤형 가이드
-  // -------------------------------------------------------------------
-  function buildGuide(profile, stats, screening) {
-    const guide = { schedule: [], environment: [], substance: [], habit: [], tonight: [] };
-
-    // 취침/기상 시간
-    if (stats.sol > 25) {
-      guide.schedule.push('입면까지 시간이 길어요. 잠자리에 드는 시각을 지금보다 20~30분 늦춰 "졸릴 때 눕기"를 시도해 보세요.');
-    } else {
-      guide.schedule.push('현재 입면 패턴은 양호합니다. 매일 비슷한 시각에 취침·기상하여 리듬을 유지하세요.');
-    }
-    guide.schedule.push('주말과 평일의 기상 시각 차이를 1시간 이내로 유지하면 생체리듬 안정에 도움이 됩니다.');
-
-    // 수면 환경
-    guide.environment.push('침실 조도를 낮추고(수면등 이하), 온도는 18~20℃로 유지하면 깊은 수면(N3) 비율 개선에 도움이 됩니다.');
-    if (stats.awakenings >= 6) {
-      guide.environment.push('중간 각성이 잦은 편입니다. 소음 차단(백색소음/귀마개)과 침구 정리를 점검해 보세요.');
-    }
-
-    // 카페인/전자기기
-    guide.substance.push('취침 6시간 전부터 카페인 섭취를 제한하면 입면 지연을 줄이는 데 도움이 됩니다.');
-    guide.substance.push('취침 1시간 전 스마트폰·TV 등 청색광 노출을 줄이면 멜라토닌 분비에 유리합니다.');
-
-    // 수면 습관
-    if (stats.stagePct.N3 < NORMAL_RANGE.N3[0]) {
-      guide.habit.push('깊은 수면 비율이 참고범위보다 낮습니다. 늦은 저녁 격렬한 운동을 피하고, 낮 시간 가벼운 유산소 운동을 권장합니다.');
-    }
-    if (stats.efficiency < 85) {
-      guide.habit.push('수면 효율이 다소 낮습니다. 침대는 수면 목적으로만 사용하고, 잠들지 못하면 잠시 일어나 다른 공간에서 시간을 보내 보세요.');
-    } else {
-      guide.habit.push('전반적인 수면 효율이 양호합니다. 현재 루틴을 유지하는 것을 권장합니다.');
-    }
-
-    // 오늘 밤 실천 팁 (3가지)
-    guide.tonight = [
-      '취침 30분 전 조명을 어둡게 하고 스마트폰 사용을 멈춰보세요.',
-      '가벼운 스트레칭이나 4-7-8 호흡법으로 긴장을 풀어보세요.',
-      '침실 온도를 확인하고 통풍이 잘 되는지 점검해보세요.'
-    ];
-
-    const hasWarn = screening.some(s => s.level === 'warn');
-    if (hasWarn) {
-      guide.tonight.unshift('오늘 스크리닝에서 주의가 필요한 패턴이 확인되었습니다. 증상이 반복된다면 수면 전문 의료진 상담을 고려해 보세요.');
-    }
-
-    return guide;
-  }
-
-  // -------------------------------------------------------------------
-  // 8. 최근 7일 수면 점수 추이 (대시보드용)
-  // -------------------------------------------------------------------
-  function buildWeeklyTrend(profile, todayScore) {
-    const rng = mulberry32(profile.seed + 99);
-    const days = ['월', '화', '수', '목', '금', '토', '일'];
-    const trend = days.map((d, i) => {
-      if (i === days.length - 1) return { day: d, score: todayScore };
-      const delta = Math.round((rng() * 22) - 11);
-      return { day: d, score: Math.max(40, Math.min(97, todayScore - 3 + delta)) };
-    });
-    return trend;
-  }
-
-  // -------------------------------------------------------------------
-  // 9. 최종 분석 결과 조립 (캐싱)
-  // -------------------------------------------------------------------
-  const cache = {};
-  function analyze(profileKey) {
-    if (cache[profileKey]) return cache[profileKey];
-    const profile = PROFILES.find(p => p.key === profileKey);
-    if (!profile) throw new Error('Unknown profile: ' + profileKey);
-
-    const hyp = buildHypnogram(profile);
-    const stats = computeStats(hyp);
-    stats._hyp = hyp;
-    stats._hypLength = hyp.length;
-    const score = computeScore(stats);
-    const wave = buildWaveform(profile, stats);
-    const screening = buildScreening(profile, stats);
-    const guide = buildGuide(profile, stats, screening);
-    const weeklyTrend = buildWeeklyTrend(profile, score.score);
-
-    const result = { profile, hypnogram: hyp, stats, score, wave, screening, guide, weeklyTrend };
-    cache[profileKey] = result;
-    return result;
-  }
-
-  global.SleepData = {
-    PROFILES, STAGES, STAGE_LABEL, STAGE_COLOR, NORMAL_RANGE, EPOCH_SEC,
-    analyze
-  };
-})(window);
+  /* ------------------------------------------------------------------------
+     주의사항
+     ------------------------------------------------------------------------ */
+  disclaimers: [
+    '본 서비스는 의학적 진단이 아닌 진단 보조 수단이며, 분석 결과는 참고용입니다.',
+    '정확한 진단과 치료는 반드시 피부과 전문의와 상담하세요.',
+    '증상이 급격히 번지거나 통증·발열이 동반되는 경우 즉시 의료기관을 방문하세요.',
+    '현재 웹앱의 분석 결과는 서비스 흐름과 화면 구성을 보여주기 위한 프로토타입(mock)입니다.',
+    '심각도 평가와 전문의 상담 여부 안내는 향후 확장 예정 항목입니다.'
+  ]
+};
