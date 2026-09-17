@@ -1,4 +1,11 @@
-# 더마렌즈 (DermaLens)
+# 더마렌즈 (DermaLens)   
+## 실행 링크 : https://dermalens.kdt2025.com/   
+<img width="1121" height="661" alt="image" src="https://github.com/user-attachments/assets/13603536-438c-48fc-8e1f-a6618539569d" />   
+<img width="643" height="640" alt="image" src="https://github.com/user-attachments/assets/1499fe19-d53d-41bc-b7eb-1749e34e0dac" />   
+
+
+
+
 
 **AI 기반 안면 피부질환 분석 서비스 — 웹앱 프로토타입**
 
